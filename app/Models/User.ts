@@ -11,7 +11,7 @@ export default class User extends BaseModel {
   @column({ isPrimary: true })
   public id: number
 
-  @column({ isPrimary: true })
+  @column({ isPrimary: true, serializeAs: null })
   public secure_id: uuidv4
 
   @column()
@@ -20,7 +20,7 @@ export default class User extends BaseModel {
   @column()
   public email: string
 
-  @column()
+  @column({ serializeAs: null })
   public password: string
 
   @column()
