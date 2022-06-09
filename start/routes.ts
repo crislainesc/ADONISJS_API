@@ -20,5 +20,6 @@
 
 import Route from '@ioc:Adonis/Core/Route'
 import 'App/Modules/Users/routes'
+import 'App/Modules/Games/routes'
 
 Route.post('/login', 'AuthController.login')
