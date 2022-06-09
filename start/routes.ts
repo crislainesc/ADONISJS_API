@@ -23,3 +23,5 @@ import 'App/Modules/Users/routes'
 import 'App/Modules/Games/routes'
 
 Route.post('/login', 'AuthController.login')
+
+Route.get('/list', 'CartsController.index').prefix('cart').middleware('auth')
