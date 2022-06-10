@@ -1,8 +1,10 @@
 import Mail from '@ioc:Adonis/Addons/Mail'
 import Hash from '@ioc:Adonis/Core/Hash'
+import { DateTime } from 'luxon'
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 
 import User from 'App/Models/User'
+import Bet from 'App/Models/Bet'
 
 import CreateUserValidator from 'App/Validators/CreateUserValidator'
 import UpdateUserPasswordValidator from 'App/Validators/UpdateUserPasswordValidator'
@@ -43,7 +45,13 @@ export default class UsersController {
 
     const user = await User.findByOrFail('id', id)
 
-    return response.ok(user)
+    const lastMonth = await DateTime.now().minus({ months: 1 }).endOf('day')
+
+    const allBets = await (await Bet.all()).filter((bet) => bet.user_id === id)
+
+    const bets = await allBets.filter((bet) => bet.updatedAt > lastMonth)
+
+    return response.ok({ user, bets })
   }
 
   public async update({ request, auth, response }: HttpContextContract) {
