@@ -1,7 +1,7 @@
 import { schema, CustomMessages } from '@ioc:Adonis/Core/Validator'
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 
-export default class BetValidator {
+export default class CreateBetValidator {
   constructor(protected ctx: HttpContextContract) {}
 
   /*
@@ -24,7 +24,13 @@ export default class BetValidator {
    *    ```
    */
   public schema = schema.create({
-    numbers: schema.array().members(schema.number()),
+    bets: schema
+      .array()
+      .members(
+        schema
+          .object()
+          .members({ game_id: schema.number(), numbers: schema.array().members(schema.number()) })
+      ),
   })
 
   /**

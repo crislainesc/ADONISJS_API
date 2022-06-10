@@ -5,7 +5,8 @@ import Cart from 'App/Models/Cart'
 import Game from 'App/Models/Game'
 import User from 'App/Models/User'
 
-import BetValidator from 'App/Validators/BetValidator'
+import CreateBetValidator from 'App/Validators/CreateBetValidator'
+import UpdateBetValidator from 'App/Validators/UpdateBetValidator'
 
 interface IBet {
   numbers: string
@@ -17,7 +18,7 @@ interface IBet {
 export default class BetsController {
   public async create({ auth, request, response }: HttpContextContract) {
     const { id } = await auth.use('api').authenticate()
-    await request.validate(BetValidator)
+    await request.validate(CreateBetValidator)
 
     try {
       const user = await User.findBy('id', id)
@@ -94,7 +95,7 @@ export default class BetsController {
   public async update({ auth, request, response }) {
     const { id } = await auth.use('api').authenticate()
 
-    await request.validate(BetValidator)
+    await request.validate(UpdateBetValidator)
 
     try {
       const betId = await request.params('id').id
@@ -108,10 +109,6 @@ export default class BetsController {
       }
 
       const bet = await Bet.findByOrFail('id', betId)
-
-      if (bet.user_id != id) {
-        throw new Error('Unable to change bet')
-      }
 
       const game = await Game.findByOrFail('id', bet.game_id)
 
