@@ -1,9 +1,11 @@
 import Mail from '@ioc:Adonis/Addons/Mail'
+import Hash from '@ioc:Adonis/Core/Hash'
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 
 import User from 'App/Models/User'
 
 import CreateUserValidator from 'App/Validators/CreateUserValidator'
+import UpdateUserPasswordValidator from 'App/Validators/UpdateUserPasswordValidator'
 import UpdateUserValidator from 'App/Validators/UpdateUserValidator'
 
 export default class UsersController {
@@ -72,5 +74,33 @@ export default class UsersController {
     await user.delete()
 
     return response.noContent()
+  }
+
+  public async reset({ request, response }: HttpContextContract) {
+    await request.validate(UpdateUserPasswordValidator)
+
+    const data = request.only(['email', 'old_password', 'new_password'])
+
+    const user = await User.findByOrFail('email', data.email)
+
+    const passwordsMatch = await Hash.verify(user.password, data['old_password'])
+
+    if (!passwordsMatch) {
+      return response.badRequest({ message: 'Old password does not match' })
+    }
+
+    await user.merge({ password: data['new_password'] })
+
+    await user.save()
+
+    await Mail.sendLater((message) => {
+      message
+        .from('labylub@labluby.com.br')
+        .to(user.email)
+        .subject('Password Reseted!')
+        .htmlView('emails/reset_password')
+    })
+
+    return response.ok({ message: 'Password reset with successfuly.' })
   }
 }
