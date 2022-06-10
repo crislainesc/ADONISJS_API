@@ -1,3 +1,4 @@
+import Mail from '@ioc:Adonis/Addons/Mail'
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 
 import User from 'App/Models/User'
@@ -21,6 +22,16 @@ export default class UsersController {
     const token = await auth
       .use('api')
       .attempt(data.email, data.password, { expiresIn: '30mins', name: user?.serialize().email })
+
+    await Mail.sendLater((message) => {
+      message
+        .from('labylub@labluby.com.br')
+        .to(user.email)
+        .subject('Welcome Onboard!')
+        .htmlView('emails/welcome', {
+          user: { fullName: user.name },
+        })
+    })
 
     return response.created({ user, token })
   }
