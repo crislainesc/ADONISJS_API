@@ -1,3 +1,4 @@
+import Mail from '@ioc:Adonis/Addons/Mail'
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 
 import Bet from 'App/Models/Bet'
@@ -73,6 +74,16 @@ export default class BetsController {
       }
 
       const bet = await Bet.createMany(betsToSave)
+
+      await Mail.sendLater((message) => {
+        message
+          .from('labylub@labluby.com.br')
+          .to(user.email)
+          .subject('New Bet!')
+          .htmlView('emails/new_bet', {
+            bet: { value: total, games: betsToSave },
+          })
+      })
 
       return response.created({ bet: bet })
     } catch (error) {
