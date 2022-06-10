@@ -8,3 +8,4 @@ Route.group(() => {
 })
   .prefix('/games')
   .middleware('auth')
+  .middleware('accessProfileVerify')
