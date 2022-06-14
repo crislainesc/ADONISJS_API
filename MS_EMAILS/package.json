@@ -1,0 +1,14 @@
+{
+  "name": "MS_EMAILS",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "node App.js"
+  },
+  "dependencies": {
+    "express": "^4.18.1",
+    "kafkajs": "^2.0.2"
+  }
+}
