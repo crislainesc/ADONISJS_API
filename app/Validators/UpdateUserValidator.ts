@@ -27,6 +27,7 @@ export default class UpdateUserValidator {
     name: schema.string.optional({ escape: true }),
     email: schema.string.optional({trim: true}, [rules.email()]),
     password: schema.string.optional(),
+    access_profile: schema.string.optional(),
   })
 
   /**

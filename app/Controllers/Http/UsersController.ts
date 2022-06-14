@@ -65,7 +65,7 @@ export default class UsersController {
 
     await request.validate(UpdateUserValidator)
 
-    const data = request.only(['name', 'email', 'password'])
+    const data = request.only(['name', 'email', 'password', 'access_profile'])
 
     await user.merge(data)
 

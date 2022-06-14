@@ -26,3 +26,7 @@ import 'App/Modules/Bets/routes'
 Route.post('/login', 'AuthController.login')
 
 Route.get('/list', 'CartsController.index').prefix('cart').middleware('auth')
+Route.post('/create', 'CartsController.create')
+  .prefix('cart')
+  .middleware('auth')
+  .middleware('accessProfileVerify')
