@@ -30,7 +30,7 @@ const consumer_admin = kafka.consumer({groupId: 'admin'});
 
 const consumer_reset_password = kafka.consumer({groupId: 'reset'});
 
-const newUser = async (username, email) => {
+const sendMailForNewUser = async (username, email) => {
     const message = {
         from: 'labylub@labluby.com.br',
         to: email,
@@ -45,7 +45,7 @@ const newUser = async (username, email) => {
     transport.sendMail(message);
 };
 
-const newBet = async (username, email) => {
+const senMailForNewBet = async (username, email) => {
     const message = {
         from: 'labylub@labluby.com.br',
         to: email,
@@ -60,7 +60,7 @@ const newBet = async (username, email) => {
     transport.sendMail(message);
 };
 
-const newBetAdmin = async (username, email, user) => {
+const sendMailForNewBetToAdmin = async (username, email, user) => {
     const message = {
         from: 'labylub@labluby.com.br',
         to: email,
@@ -75,15 +75,29 @@ const newBetAdmin = async (username, email, user) => {
     transport.sendMail(message);
 };
 
-async function resetPassword(email, username, token, url) {
+async function sendMailForResetPassword(email, username) {
     const message = {
         from: 'labylub@labluby.com.br',
         to: email,
         subject: 'Password Reseted!',
         html: `<h3>Reset Password!</h3>
         <p>
-          <p>You requested password reset.</p>
+          <p>Hello ${username}. You requested password reset.</p>
           <p>Password reseted with successfuly.</p>
+        </p>`,
+    };
+
+    transport.sendMail(message);
+}
+
+async function sendMailForInviteToNewBet(email, username) {
+    const message = {
+        from: 'labylub@labluby.com.br',
+        to: email,
+        subject: `<h3> Hello ${username} </h3>
+        <p>
+          <p>We noticed that you haven't placed any bets in the last week.</p>
+          <p>How about placing a bet now? Luck awaits you!</p>
         </p>`,
     };
 
