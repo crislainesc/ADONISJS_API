@@ -1,10 +1,12 @@
 const express = require('express');
 const {Kafka} = require('kafkajs');
-const nodemailer = require();
+const nodemailer = require('nodemailer');
 
 const app = express();
 
-app.listen(3333);
+app.listen(3000, () => {
+    console.log('Server Listening at port 3000');
+});
 
 const kafka = new Kafka({
     clientId: 'ms_emails',
@@ -20,7 +22,13 @@ const transport = nodemailer.createTransport({
     },
 });
 
-const topic = 'sendEmailsToAllAdmins';
+const adminTopic = 'sendEmailToAllAdmins';
+const usersTopics = {
+    welcome: 'sendEmailToWelcomeNewUser',
+    newBet: 'sendEmailToUserForNewBet',
+    inviteToNewBet: 'sendEmailToUserForInviteToNewBet',
+    resetPassword: 'sendEmailToUserForResetPassword',
+};
 
 const consumer_new_user = kafka.consumer({groupId: 'new-user'});
 
@@ -30,7 +38,7 @@ const consumer_admin = kafka.consumer({groupId: 'admin'});
 
 const consumer_reset_password = kafka.consumer({groupId: 'reset'});
 
-const sendMailForNewUser = async (username, email) => {
+const sendMailForNewUser = async (email, username) => {
     const message = {
         from: 'labylub@labluby.com.br',
         to: email,
@@ -45,7 +53,7 @@ const sendMailForNewUser = async (username, email) => {
     transport.sendMail(message);
 };
 
-const senMailForNewBet = async (username, email) => {
+const sendMailForNewBet = async (email, username) => {
     const message = {
         from: 'labylub@labluby.com.br',
         to: email,
@@ -60,7 +68,7 @@ const senMailForNewBet = async (username, email) => {
     transport.sendMail(message);
 };
 
-const sendMailForNewBetToAdmin = async (username, email, user) => {
+const sendMailForNewBetToAdmin = async (email, username, user) => {
     const message = {
         from: 'labylub@labluby.com.br',
         to: email,
@@ -94,7 +102,8 @@ async function sendMailForInviteToNewBet(email, username) {
     const message = {
         from: 'labylub@labluby.com.br',
         to: email,
-        subject: `<h3> Hello ${username} </h3>
+        subject: 'We missed you!',
+        html: `<h3> Hello ${username} </h3>
         <p>
           <p>We noticed that you haven't placed any bets in the last week.</p>
           <p>How about placing a bet now? Luck awaits you!</p>
@@ -103,3 +112,69 @@ async function sendMailForInviteToNewBet(email, username) {
 
     transport.sendMail(message);
 }
+
+const runSendMailForNewUser = async () => {
+    await consumer_new_user.connect();
+    await consumer_new_user.subscribe({topic: usersTopics.welcome});
+    await consumer_new_user.run({
+        eachMessage: async ({message}) => {
+            const {user} = JSON.parse(message.value.toString());
+            const {email, username} = user;
+            sendMailForNewUser(email, username);
+        },
+    });
+};
+
+const runSendMailForNewBet = async () => {
+    await consumer_bets.connect();
+    await consumer_bets.subscribe({topic: usersTopics.newBet});
+    await consumer_bets.run({
+        eachMessage: async ({message}) => {
+            const {user} = JSON.parse(message.value.toString());
+            const {email, username} = user;
+            sendMailForNewBet(email, username);
+        },
+    });
+};
+
+const runSendMailForNewBetToAdmin = async () => {
+    await consumer_admin.connect();
+    await consumer_admin.subscribe({topic: adminTopic});
+    await consumer_admin.run({
+        eachMessage: async ({message}) => {
+            const {admin} = JSON.parse(message.value.toString());
+            const {email, username, user} = admin;
+            sendMailForNewBetToAdmin(email, username, user);
+        },
+    });
+};
+
+const runSendMailForResetPassword = async () => {
+    await consumer_reset_password.connect();
+    await consumer_reset_password.subscribe({topic: usersTopics.resetPassword});
+    await consumer_reset_password.run({
+        eachMessage: async ({message}) => {
+            const {user} = JSON.parse(message.value.toString());
+            const {email, username} = user;
+            sendMailForResetPassword(email, username);
+        },
+    });
+};
+
+const runSendMailForInviteToNewBet = async () => {
+    await consumer_reset_password.connect();
+    await consumer_reset_password.subscribe({topic: usersTopics.inviteToNewBet});
+    await consumer_reset_password.run({
+        eachMessage: async ({message}) => {
+            const {user} = JSON.parse(message.value.toString());
+            const {email, username} = user;
+            sendMailForInviteToNewBet(email, username);
+        },
+    });
+};
+
+runSendMailForNewUser().catch((error) => console.log(error));
+runSendMailForNewBet().catch((error) => console.log(error));
+runSendMailForNewBetToAdmin().catch((error) => console.log(error));
+runSendMailForResetPassword().catch((error) => console.log(error));
+runSendMailForInviteToNewBet().catch((error) => console.log(error));
