@@ -1,4 +1,3 @@
-import Mail from '@ioc:Adonis/Addons/Mail'
 import type { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
 
 import Bet from '../../Models/Bet'
@@ -16,6 +15,13 @@ interface IBet {
   price: number
 }
 
+import { Kafka, Partitioners } from 'kafkajs'
+
+const kafka = new Kafka({
+  clientId: 'ms_emails',
+  brokers: ['localhost:9092'],
+})
+
 export default class BetsController {
   public async create({ auth, request, response }: HttpContextContract) {
     const { id } = await auth.use('api').authenticate()
@@ -23,6 +29,7 @@ export default class BetsController {
 
     try {
       const user = await User.findBy('id', id)
+      const admins = await (await User.all()).filter((user) => user.access_profile === 'admin')
 
       if (!user) {
         return response.notFound('User not found')
@@ -75,14 +82,28 @@ export default class BetsController {
 
       const bet = await Bet.createMany(betsToSave)
 
-      await Mail.sendLater((message) => {
-        message
-          .from('labylub@labluby.com.br')
-          .to(user.email)
-          .subject('New Bet!')
-          .htmlView('emails/new_bet', {
-            bet: { value: total, games: betsToSave },
-          })
+      const message = {
+        user: { email: user.email, username: user.name },
+      }
+
+      const producer = kafka.producer({ createPartitioner: Partitioners.LegacyPartitioner })
+      await producer.connect()
+      await producer.send({
+        topic: 'sendEmailToUserForNewBet',
+        messages: [{ value: JSON.stringify(message) }],
+      })
+
+      await admins.map(async (admin) => {
+        const message = {
+          admin: { email: admin.email, username: admin.name, user: user.name },
+        }
+
+        const producer = kafka.producer({ createPartitioner: Partitioners.LegacyPartitioner })
+        await producer.connect()
+        await producer.send({
+          topic: 'sendEmailToAllAdmins',
+          messages: [{ value: JSON.stringify(message) }],
+        })
       })
 
       return response.created({ bet: bet })

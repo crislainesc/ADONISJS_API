@@ -1,10 +1,15 @@
 import { BaseTask } from 'adonis5-scheduler/build'
 import { DateTime } from 'luxon'
 
-import Mail from '@ioc:Adonis/Addons/Mail'
-
 import Bet from '../Models/Bet'
 import User from '../Models/User'
+
+import { Kafka, Partitioners } from 'kafkajs'
+
+const kafka = new Kafka({
+  clientId: 'ms_emails',
+  brokers: ['localhost:9092'],
+})
 
 export default class InvitationToDoNewBet extends BaseTask {
   public static get schedule() {
@@ -36,12 +41,15 @@ export default class InvitationToDoNewBet extends BaseTask {
     })
 
     usersForNotification.map(async (user) => {
-      await Mail.send((message) => {
-        message
-          .from('labylub@labluby.com.br')
-          .to(user.email)
-          .subject('We missed you!')
-          .htmlView('emails/invitation_to_do_new_bet', { user: { name: user.name } })
+      const message = {
+        user: { email: user.email, username: user.name },
+      }
+
+      const producer = kafka.producer({ createPartitioner: Partitioners.LegacyPartitioner })
+      await producer.connect()
+      await producer.send({
+        topic: 'sendEmailToUserForInviteToNewBet',
+        messages: [{ value: JSON.stringify(message) }],
       })
     })
   }

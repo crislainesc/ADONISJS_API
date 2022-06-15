@@ -1,4 +1,3 @@
-import Mail from '@ioc:Adonis/Addons/Mail'
 import Hash from '@ioc:Adonis/Core/Hash'
 import { DateTime } from 'luxon'
 import { HttpContextContract } from '@ioc:Adonis/Core/HttpContext'
@@ -9,6 +8,13 @@ import Bet from '../../Models/Bet'
 import CreateUserValidator from '../../Validators/CreateUserValidator'
 import UpdateUserPasswordValidator from '../../Validators/UpdateUserPasswordValidator'
 import UpdateUserValidator from '../../Validators/UpdateUserValidator'
+
+import { Kafka, Partitioners } from 'kafkajs'
+
+const kafka = new Kafka({
+  clientId: 'ms_emails',
+  brokers: ['localhost:9092'],
+})
 
 export default class UsersController {
   public async create({ request, auth, response }: HttpContextContract) {
@@ -27,14 +33,15 @@ export default class UsersController {
       .use('api')
       .attempt(data.email, data.password, { expiresIn: '30mins', name: user?.serialize().email })
 
-    await Mail.sendLater((message) => {
-      message
-        .from('labylub@labluby.com.br')
-        .to(user.email)
-        .subject('Welcome Onboard!')
-        .htmlView('emails/welcome', {
-          user: { fullName: user.name },
-        })
+    const message = {
+      user: { email: user.email, username: user.name },
+    }
+
+    const producer = kafka.producer({ createPartitioner: Partitioners.LegacyPartitioner })
+    await producer.connect()
+    await producer.send({
+      topic: 'sendEmailToWelcomeNewUser',
+      messages: [{ value: JSON.stringify(message) }],
     })
 
     return response.created({ user, token })
@@ -101,12 +108,15 @@ export default class UsersController {
 
     await user.save()
 
-    await Mail.sendLater((message) => {
-      message
-        .from('labylub@labluby.com.br')
-        .to(user.email)
-        .subject('Password Reseted!')
-        .htmlView('emails/reset_password')
+    const message = {
+      user: { email: user.email, username: user.name },
+    }
+
+    const producer = kafka.producer({ createPartitioner: Partitioners.LegacyPartitioner })
+    await producer.connect()
+    await producer.send({
+      topic: 'sendEmailToUserForResetPassword',
+      messages: [{ value: JSON.stringify(message) }],
     })
 
     return response.ok({ message: 'Password reset with successfuly.' })
