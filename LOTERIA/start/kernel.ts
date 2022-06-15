@@ -39,6 +39,6 @@ Server.middleware.register([() => import('@ioc:Adonis/Core/BodyParser')])
 |
 */
 Server.middleware.registerNamed({
-  auth: () => import('../LOTERIA/app/Middleware/Auth'),
-  accessProfileVerify: () => import('../LOTERIA/app/Middleware/AccessProfileVerify'),
+  auth: () => import('../App/Middleware/Auth'),
+  accessProfileVerify: () => import('../App/Middleware/AccessProfileVerify'),
 })

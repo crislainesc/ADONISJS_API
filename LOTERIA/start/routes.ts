@@ -19,9 +19,9 @@
 */
 
 import Route from '@ioc:Adonis/Core/Route'
-import '../LOTERIA/app/Modules/Users/routes'
-import '../LOTERIA/app/Modules/Games/routes'
-import '../LOTERIA/app/Modules/Bets/routes'
+import 'App/Modules/Users/routes'
+import 'App/Modules/Games/routes'
+import 'App/Modules/Bets/routes'
 
 Route.post('/login', 'AuthController.login')
 
